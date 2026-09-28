@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jyoti-AI | Indian Astronomy Intelligence Engine</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- KaTeX for Mathematical Formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        space: {
+                            base: '#000000',
+                            panel: 'rgba(12, 16, 26, 0.82)',
+                            card: 'rgba(20, 27, 41, 0.65)',
+                            border: 'rgba(255, 255, 255, 0.12)',
+                            gold: '#f59e0b',
+                            amber: '#d97706',
+                            cyan: '#06b6d4'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #000000;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Glassmorphism Styling */
+        .glass-panel {
+            background: rgba(8, 12, 20, 0.55);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-card {
+            background: rgba(14, 20, 32, 0.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            background: rgba(22, 30, 48, 0.6);
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 4px 20px -2px rgba(245, 158, 11, 0.2);
+        }
+
+        /* Canvas background pointer pass-through */
+        #star-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.5);
+        }
+
+        /* Markdown Formatting Styles */
+        .prose-custom h1, .prose-custom h2, .prose-custom h3 {
+            color: #fbbf24;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .prose-custom h3 { font-size: 1.1rem; }
+        .prose-custom p { margin-bottom: 0.75rem; line-height: 1.65; color: #e5e7eb; }
+        .prose-custom ul { list-style-type: disc; margin-left: 1.25rem; margin-bottom: 0.75rem; color: #d1d5db; }
+        .prose-custom ol { list-style-type: decimal; margin-left: 1.25rem; margin-bottom: 0.75rem; color: #d1d5db; }
+        .prose-custom li { margin-bottom: 0.25rem; }
+        .prose-custom code {
+            background: rgba(0, 0, 0, 0.5);
+            color: #38bdf8;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        .prose-custom pre {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin-bottom: 0.75rem;
+        }
+        .prose-custom blockquote {
+            border-left: 3px solid #f59e0b;
+            padding-left: 0.75rem;
+            color: #9ca3af;
+            font-style: italic;
+            margin-bottom: 0.75rem;
+        }
+        .prose-custom table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+        .prose-custom th, .prose-custom td {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+        }
+        .prose-custom th {
+            background: rgba(245, 158, 11, 0.1);
+            color: #fbbf24;
+        }
+
+        /* KaTeX Math Formatting */
+        .katex-display {
+            margin: 0.75rem 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.375rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .katex {
+            font-size: 1.05em;
+            color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen relative flex flex-col">
+
+    <!-- Interactive Astronomical Canvas Background -->
+    <canvas id="star-canvas"></canvas>
+
+    <!-- Main Container -->
+    <div class="relative z-10 flex flex-col h-full w-full max-w-[1600px] mx-auto p-3 sm:p-5 gap-4">
+
+        <!-- Header -->
+        <header class="glass-panel rounded-xl px-5 py-3.5 flex items-center justify-between shrink-0 shadow-2xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center text-black font-bold text-xl shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid font-mono">JY</i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-bold text-lg tracking-wide text-white">Jyoti-AI</h1>
+                        <span class="px-2 py-0.5 text-[10px] font-mono tracking-wider uppercase bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full">v2.4 Engine</span>
+                    </div>
+                    <p class="text-xs text-gray-400">Classical Indian Astronomy & Mathematical Khagola Engine</p>
+                </div>
+            </div>
+
+            <!-- Telemetry Bar -->
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex items-center gap-6 px-4 py-1.5 rounded-lg bg-black/40 border border-white/5 text-xs font-mono">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-gray-400">Backend:</span>
+                        <span class="text-emerald-400 font-medium">Groq LPU</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-gauge-high text-amber-400"></i>
+                        <span class="text-gray-400">Latency:</span>
+                        <span id="latencyMetric" class="text-white">-- ms</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-microchip text-cyan-400"></i>
+                        <span class="text-gray-400">Model:</span>
+                        <span class="text-cyan-300">qwen/qwen3.8-27b</span>
+                    </div>
+                </div>
+
+                <button onclick="togglePromptModal()" class="px-3.5 py-2 rounded-lg bg-white/5 hover:bg-amber-500/10 border border-white/10 hover:border-amber-500/40 text-xs text-gray-300 hover:text-amber-400 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-amber-400"></i>
+                    <span>System Guardrails</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Body Workspace -->
+        <div class="flex-1 flex gap-4 overflow-hidden relative">
+
+            <!-- Sidebar -->
+            <aside class="hidden lg:flex flex-col w-72 glass-panel rounded-xl p-4 gap-4 shrink-0 overflow-y-auto">
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-1 flex items-center justify-between">
+                        <span>Classical Treatises</span>
+                        <i class="fa-solid fa-book-bookmark text-amber-500/60"></i>
+                    </h2>
+                    <div class="space-y-1.5">
+                        <button onclick="sendPreset('Explain the core astronomical principles presented in the Surya Siddhanta.')" class="w-full text-left p-2.5 rounded-lg glass-card hover:bg-amber-500/10 text-xs text-gray-300 hover:text-amber-300 flex items-center gap-2.5">
+                            <i class="fa-solid fa-sun text-amber-400 w-4 text-center"></i>
+                            <span class="font-medium">Surya Siddhanta</span>
+                        </button>
+                        <button onclick="sendPreset('What mathematical innovations and planetary models were introduced in the Aryabhatiya?')" class="w-full text-left p-2.5 rounded-lg glass-card hover:bg-amber-500/10 text-xs text-gray-300 hover:text-amber-300 flex items-center gap-2.5">
+                            <i class="fa-solid fa-square-root-variable text-cyan-400 w-4 text-center"></i>
+                            <span class="font-medium">Aryabhatiya</span>
+                        </button>
+                        <button onclick="sendPreset('Detail the astronomical contributions of Bhaskara II in Siddhanta Shiromani.')" class="w-full text-left p-2.5 rounded-lg glass-card hover:bg-amber-500/10 text-xs text-gray-300 hover:text-amber-300 flex items-center gap-2.5">
+                            <i class="fa-solid fa-moon text-purple-400 w-4 text-center"></i>
+                            <span class="font-medium">Siddhanta Shiromani</span>
+                        </button>
+                        <button onclick="sendPreset('How does Brahma-Sphuta-Siddhanta deal with eclipse mechanics and planetary longitudes?')" class="w-full text-left p-2.5 rounded-lg glass-card hover:bg-amber-500/10 text-xs text-gray-300 hover:text-amber-300 flex items-center gap-2.5">
+                            <i class="fa-solid fa-circle-half-stroke text-rose-400 w-4 text-center"></i>
+                            <span class="font-medium">Brahma-Sphuta-Siddhanta</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="border-t border-white/10 pt-4">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-1 flex items-center justify-between">
+                        <span>Calculations & Instruments</span>
+                        <i class="fa-solid fa-compass-drafting text-amber-500/60"></i>
+                    </h2>
+                    <div class="space-y-1.5">
+                        <button onclick="sendPreset('Explain the mathematical structure of the 27 Nakshatras and how the ecliptic is divided.')" class="w-full text-left p-2.5 rounded-lg glass-card hover:bg-amber-500/10 text-xs text-gray-300 hover:text-amber-300 flex items-center gap-2.5">
+                            <i class="fa-solid fa-star text-yellow-400 w-4 text-center"></i>
+                            <span>27 Nakshatra Division</span>
+                        </button>
+                        <button onclick="sendPreset('Explain the 5 elements of Panchanga calculations: Tithi, Vara, Nakshatra, Yoga, and Karana.')" class="w-full text-left p-2.5 rounded-lg glass-card hover:bg-amber-500/10 text-xs text-gray-300 hover:text-amber-300 flex items-center gap-2.5">
+                            <i class="fa-solid fa-calendar-days text-emerald-400 w-4 text-center"></i>
+                            <span>Panchanga Computation</span>
+                        </button>
+                        <button onclick="sendPreset('How do the Samrat Yantra and Jai Prakash Yantra measure time and celestial positions at Jantar Mantar?')" class="w-full text-left p-2.5 rounded-lg glass-card hover:bg-amber-500/10 text-xs text-gray-300 hover:text-amber-300 flex items-center gap-2.5">
+                            <i class="fa-solid fa-monument text-amber-400 w-4 text-center"></i>
+                            <span>Jantar Mantar Yantras</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-4 border-t border-white/10">
+                    <div class="p-3 rounded-lg bg-black/40 border border-white/5">
+                        <div class="text-[11px] font-medium text-amber-400 mb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>Domain Grounded</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400 leading-normal">
+                            System rules strictly restrict non-astronomical queries and enforce mathematical rigor using classical sources.
+                        </p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Chat Output Panel -->
+            <main class="flex-1 flex flex-col glass-panel rounded-xl overflow-hidden relative">
+
+                <!-- Scrollable Messages -->
+                <div id="chatBox" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                    
+                    <!-- Fixed Welcome Card -->
+                    <div class="glass-card rounded-xl p-5 border-l-4 border-l-amber-500">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-md shadow-amber-500/10">
+                                <i class="fa-solid fa-sun text-amber-400 text-lg"></i>
+                            </div>
+                            <div class="space-y-2">
+                                <h3 class="text-base font-semibold text-white">Welcome to Jyoti-AI Engine</h3>
+                                <p class="text-sm text-gray-300 leading-relaxed">
+                                    An enterprise AI assistant specialized in classical Indian astronomy (*Khagola Shastra*), historical astronomical treatises, mathematical algorithms (*Jyotirganita*), and ancient observational instruments.
+                                </p>
+                                <div class="flex flex-wrap gap-2 pt-2">
+                                    <button onclick="sendPreset('Explain the core astronomical principles presented in the Surya Siddhanta.')" class="text-xs px-3 py-1 rounded-md bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/40 text-gray-300 hover:text-white transition-all">
+                                        Surya Siddhanta
+                                    </button>
+                                    <button onclick="sendPreset('Explain the mathematical structure of the 27 Nakshatras.')" class="text-xs px-3 py-1 rounded-md bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/40 text-gray-300 hover:text-white transition-all">
+                                        Nakshatra Mechanics
+                                    </button>
+                                    <button onclick="sendPreset('Explain the 5 elements of Panchanga calculations.')" class="text-xs px-3 py-1 rounded-md bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/40 text-gray-300 hover:text-white transition-all">
+                                        Panchanga Math
+                                    </button>
+                                    <button onclick="sendPreset('Calculate Aryabhata\'s sine table construction method.')" class="text-xs px-3 py-1 rounded-md bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/40 text-gray-300 hover:text-white transition-all">
+                                        Jya / Sine Tables
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Input Footer -->
+                <footer class="p-3 sm:p-4 bg-black/40 border-t border-white/10 backdrop-blur-md">
+                    
+                    <!-- Quick Presets -->
+                    <div class="flex items-center gap-2 mb-3 overflow-x-auto pb-1 text-xs">
+                        <span class="text-gray-400 font-medium shrink-0"><i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Quick Presets:</span>
+                        <button onclick="sendPreset('Calculate Aryabhata\'s sine table construction method.')" class="shrink-0 px-3 py-1 rounded-full bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/40 text-gray-300 hover:text-white transition-all">
+                            Aryabhata Sine Table
+                        </button>
+                        <button onclick="sendPreset('Explain how solar and lunar eclipses were predicted in Tantrasangraha.')" class="shrink-0 px-3 py-1 rounded-full bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/40 text-gray-300 hover:text-white transition-all">
+                            Eclipse Prediction
+                        </button>
+                        <button onclick="sendPreset('What is the difference between Sayana and Nirayana zodiac systems?')" class="shrink-0 px-3 py-1 rounded-full bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/40 text-gray-300 hover:text-white transition-all">
+                            Sayana vs Nirayana
+                        </button>
+                    </div>
+
+                    <!-- Input Box -->
+                    <div class="relative flex items-center">
+                        <textarea id="userInput" rows="1" placeholder="Inquire about planetary longitudes, Nakshatras, treaties, or Jantar Mantar..." 
+                            class="w-full bg-space-card/80 border border-white/15 focus:border-amber-500/70 rounded-xl py-3 pl-4 pr-24 text-sm text-white placeholder-gray-500 outline-none resize-none transition-all shadow-inner"
+                            onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); sendMessage(); }"></textarea>
+                        
+                        <div class="absolute right-2 flex items-center gap-1.5">
+                            <button id="sendBtn" onclick="sendMessage()" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black font-semibold rounded-lg text-xs tracking-wide transition-all shadow-md shadow-amber-500/20 flex items-center gap-1.5">
+                                <span>Query</span>
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <!-- Guardrail Inspector Modal -->
+    <div id="guardrailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+        <div class="glass-panel w-full max-w-2xl rounded-xl p-6 border border-white/20 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-amber-400 text-lg"></i>
+                    <h3 class="font-bold text-lg text-white">System Guardrail & Prompt Inspector</h3>
+                </div>
+                <button onclick="togglePromptModal()" class="text-gray-400 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs text-gray-300 max-h-[60vh] overflow-y-auto pr-2">
+                <p>The backend proxy enforces domain grounding via system instruction prompts directly injected into the API payload.</p>
+                <div class="bg-black/60 p-4 rounded-lg font-mono border border-white/10 text-amber-300/90 whitespace-pre-wrap leading-relaxed">
+You are 'Jyoti-AI' (Jyotirganita & Khagola Assistant), an expert authority on Classical Indian Astronomy, Historical Mathematical Treatises, and Ancient Celestial Mechanics.
+
+Knowledge Hierarchy:
+1. Primary Treatises: Surya Siddhanta, Aryabhatiya, Siddhanta Shiromani, Brahma-Sphuta-Siddhanta.
+2. Pioneer Astronomers: Aryabhata I, Varahamihira, Brahmagupta, Bhaskara I & II.
+3. Observational Mechanics: 27 Nakshatras, Panchang, Eclipse Predictions.
+
+Formatting Rules:
+- Enforce clear markdown hierarchy with citations.
+- Differentiate strict mathematical astronomy from astrological lore.
+- Reject unrelated non-astronomy queries politely.
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-white/10">
+                <button onclick="togglePromptModal()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium text-white transition-all">
+                    Close Inspector
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Scripts -->
+    <script>
+        // --- Starry Canvas with Cursor Repulsion Physics ---
+        const canvas = document.getElementById('star-canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        let mouse = { x: null, y: null, radius: 150 };
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        window.addEventListener('mouseleave', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            const starColors = [
+                '#ffffff', '#ffffff', '#fff5f5', '#ffebee', 
+                '#f3e5f5', '#e8eaf6', '#fff8e1', '#fef3c7', '#38bdf8'
+            ];
+
+            const count = Math.floor((canvas.width * canvas.height) / 2800);
+
+            for (let i = 0; i < count; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                stars.push({
+                    x: x,
+                    y: y,
+                    baseX: x,
+                    baseY: y,
+                    radius: Math.random() * 1.8 + 0.4,
+                    color: starColors[Math.floor(Math.random() * starColors.length)],
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.015 + 0.003,
+                    vx: 0,
+                    vy: 0
+                });
+            }
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < stars.length; i++) {
+                let star = stars[i];
+
+                star.alpha += star.speed;
+                if (star.alpha > 1 || star.alpha < 0.1) star.speed = -star.speed;
+
+                // Repulsion Physics
+                if (mouse.x !== null && mouse.y !== null) {
+                    let dx = mouse.x - star.x;
+                    let dy = mouse.y - star.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < mouse.radius) {
+                        let angle = Math.atan2(dy, dx);
+                        let force = (mouse.radius - distance) / mouse.radius;
+                        let pushX = Math.cos(angle) * force * 5;
+                        let pushY = Math.sin(angle) * force * 5;
+
+                        star.x -= pushX;
+                        star.y -= pushY;
+                    }
+                }
+
+                // Smooth Return
+                let homeDx = star.baseX - star.x;
+                let homeDy = star.baseY - star.y;
+                star.x += homeDx * 0.05;
+                star.y += homeDy * 0.05;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0.1, Math.min(1, star.alpha));
+                ctx.fillStyle = star.color;
+
+                if (star.radius > 1.2) {
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = star.color;
+                }
+
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        animateStars();
+
+        // --- Global Preset and UI Functions ---
+        window.togglePromptModal = function() {
+            const modal = document.getElementById('guardrailModal');
+            modal.classList.toggle('hidden');
+        };
+
+        window.sendPreset = function(promptText) {
+            const input = document.getElementById('userInput');
+            input.value = promptText;
+            window.sendMessage();
+        };
+
+        // --- Asynchronous Streaming Chat Handler ---
+        window.sendMessage = async function() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatBox = document.getElementById('chatBox');
+            const startTime = Date.now();
+
+            // Append User Message Card
+            const userCard = document.createElement('div');
+            userCard.className = 'flex items-start justify-end gap-3';
+            userCard.innerHTML = `
+                <div class="glass-card bg-amber-500/10 border-amber-500/30 rounded-xl p-4 max-w-[85%] sm:max-w-[75%] space-y-1">
+                    <div class="text-[11px] font-mono text-amber-400 font-medium">User Query</div>
+                    <div class="text-sm text-white">${escapeHtml(message)}</div>
+                </div>
+                <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 text-xs shrink-0">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            `;
+            chatBox.appendChild(userCard);
+
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Append Bot Placeholder Card
+            const botCard = document.createElement('div');
+            botCard.className = 'flex items-start gap-3';
+            botCard.innerHTML = `
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center text-black text-xs font-bold shrink-0 shadow-md shadow-amber-500/20">
+                    <i class="fa-solid fa-sun"></i>
+                </div>
+                <div class="glass-card rounded-xl p-4 sm:p-5 max-w-[90%] sm:max-w-[85%] flex-1 border-white/10 space-y-2">
+                    <div class="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
+                        <span class="text-xs font-semibold text-amber-400 tracking-wide">Jyoti-AI Engine</span>
+                        <span class="text-[10px] font-mono text-gray-400 flex items-center gap-1 status-badge">
+                            <i class="fa-solid fa-spinner animate-spin text-amber-400"></i>
+                            <span>Streaming...</span>
+                        </span>
+                    </div>
+                    <div class="prose-custom text-sm text-gray-200 leading-relaxed content-area"></div>
+                </div>
+            `;
+            chatBox.appendChild(botCard);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const contentArea = botCard.querySelector('.content-area');
+            let accumulatedMarkdown = '';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server status ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    accumulatedMarkdown += chunk;
+                    
+                    // Render Markdown
+                    contentArea.innerHTML = marked.parse(accumulatedMarkdown);
+
+                    // Render KaTeX Formulas for $...$ and $$...$$
+                    if (window.renderMathInElement) {
+                        renderMathInElement(contentArea, {
+                            delimiters: [
+                                { left: '$$', right: '$$', display: true },
+                                { left: '$', right: '$', display: false },
+                                { left: '\\(', right: '\\)', display: false },
+                                { left: '\\[', right: '\\]', display: true }
+                            ],
+                            throwOnError: false
+                        });
+                    }
+
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+
+                // Update Latency
+                const elapsedMs = Date.now() - startTime;
+                document.getElementById('latencyMetric').textContent = `${elapsedMs} ms`;
+
+                // Update Status Badge
+                const statusBadge = botCard.querySelector('.status-badge');
+                statusBadge.className = 'text-[10px] font-mono text-emerald-400 flex items-center gap-1';
+                statusBadge.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i> Stream Complete`;
+
+            } catch (err) {
+                console.error(err);
+                contentArea.innerHTML = `<div class="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-xs">
+                    <strong>System Error:</strong> Unable to connect to FastAPI server at http://127.0.0.1:8000. (${err.message})
+                </div>`;
+            }
+        };
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+</html>
