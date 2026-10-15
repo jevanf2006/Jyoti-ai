@@ -32,4 +32,4 @@ jobs:
         env:
           GROQ_API_KEY: "gsk_dummy_key_for_ci_testing"
         run: |
-          pytest
+          python -m pytest
